@@ -10,7 +10,7 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="newTickerName"
-                @keypress.enter="add"
+                @keypress.enter="addTicker"
                 type="text"
                 name="wallet"
                 id="wallet"
@@ -18,10 +18,21 @@
                 placeholder="Например DOGE"
               />
             </div>
+            <div v-if="suggestions.length > 0" class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
+              <span
+                v-for="suggestion in suggestions"
+                @click="addSuggestionTicker(suggestion)"
+                :key="suggestion"
+                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
+              >
+                {{ suggestion }}
+              </span>
+            </div>
+            <div v-if="tickerExists" class="text-sm text-red-600">Такой тикер уже добавлен</div>
           </div>
         </div>
         <button
-          @click="add"
+          @click="addTicker"
           type="button"
           class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
@@ -128,20 +139,33 @@
 <script>
 import { API_KEY } from '../config';
 
+import { stringsAreEqual } from '@/lib/functions';
+
 export default {
   data() {
     return {
       newTickerName: '',
+      tickerExists: false,
+
       tickers: [],
+
       selectedTicker: null,
-      graphBars: []
+
+      graphBars: [],
+
+      allCoinsNames: []
     }
   },
 
   methods: {
-    add() {
+    addTicker() {
+      if (this.tickers.find(ticker => stringsAreEqual(ticker.name, this.newTickerName))) {
+        this.tickerExists = true;
+        return;
+      }
+
       const newTicker = {
-        name: this.newTickerName,
+        name: this.newTickerName.toUpperCase(),
         price: 0
       };
 
@@ -172,6 +196,11 @@ export default {
           this.graphBars.push(newGraphBar);
         }
       }, 3000);
+    },
+
+    addSuggestionTicker(tickerName) {
+      this.newTickerName = tickerName.toUpperCase();
+      this.addTicker();
     },
 
     selectTicker(ticker) {
@@ -211,7 +240,41 @@ export default {
 
         return bar;
       });
+    },
+
+    suggestions() {
+      const MAX_SUGGESTIONS_COUNT = 4;
+      const suggestions = [];
+
+      for (const coin of this.allCoinsNames) {
+        if (suggestions.length === MAX_SUGGESTIONS_COUNT) break;
+
+        // If new ticker name input is empty, JS matches all values. We disabled that by stating that
+        // if it is empty, then non-value pattern should be applied, i.e. '^$' - it matches nothing.
+        const pattern = this.newTickerName || '^$';
+        const regexp = new RegExp(pattern, 'i');
+        if (coin.match(regexp)) {
+          suggestions.push(coin);
+        }
+      }
+
+      return suggestions;
     }
+  },
+
+  watch: {
+    newTickerName() {
+      if (this.tickerExists) this.tickerExists = false;
+    }
+  },
+
+  async created() {
+    const allCoinsResp = await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true');
+    const allCoins = await allCoinsResp.json();
+
+    const allCoinsNames = Object.keys(allCoins.Data).sort();
+
+    this.allCoinsNames = allCoinsNames;
   }
 }
 </script>
