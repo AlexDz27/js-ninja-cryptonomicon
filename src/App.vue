@@ -162,6 +162,7 @@ export default {
         const currentTicker = this.tickers.find(ticker => ticker.name === newTicker.name);
         currentTicker.price = data.USD;
 
+        // TODO: probably there's a better way to do that further
         if (this.selectedTicker?.name === currentTicker.name) {
           const newGraphBar = {
             price: currentTicker.price,
@@ -170,7 +171,7 @@ export default {
 
           this.graphBars.push(newGraphBar);
         }
-      }, 1500);
+      }, 3000);
     },
 
     selectTicker(ticker) {
@@ -214,5 +215,3 @@ export default {
   }
 }
 </script>
-
-<style src="./css/app.css"></style>
