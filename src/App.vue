@@ -28,7 +28,7 @@
                 {{ suggestion }}
               </span>
             </div>
-            <div v-if="tickerExists" class="text-sm text-red-600">Такой тикер уже добавлен</div>
+            <div v-if="tickerExistsErr" class="text-sm text-red-600">Такой тикер уже добавлен</div>
           </div>
         </div>
         <button
@@ -173,7 +173,7 @@ export default {
   data() {
     return {
       newTickerName: '',
-      tickerExists: false,
+      tickerExistsErr: false,
 
       tickers: [],
 
@@ -192,7 +192,7 @@ export default {
   methods: {
     addTicker() {
       if (this.tickers.find(ticker => stringsAreEqual(ticker.name, this.newTickerName))) {
-        this.tickerExists = true;
+        this.tickerExistsErr = true;
         return;
       }
 
@@ -270,15 +270,15 @@ export default {
   computed: {
     paginatedTickers() {
       // Filter by page count (pagination)
-      return this.tickersFilteredByInput.slice(this.pagination.start, this.pagination.end);
+      return this.filteredTickers.slice(this.pagination.start, this.pagination.end);
     },
-    tickersFilteredByInput() {
+    hasNextPage() {
+      return this.filteredTickers.length > this.pagination.end;
+    },
+    filteredTickers() {
       const regexp = new RegExp(this.filterInput, 'i');
 
       return this.tickers.filter(t => t.name.match(regexp));
-    },
-    hasNextPage() {
-      return this.tickersFilteredByInput.length > this.pagination.end;
     },
 
     builtGraphBars() {
@@ -330,7 +330,11 @@ export default {
 
   watch: {
     newTickerName() {
-      if (this.tickerExists) this.tickerExists = false;
+      if (this.tickerExistsErr) this.tickerExistsErr = false;
+    },
+
+    filterInput() {
+      this.page = 1;
     }
   },
 
