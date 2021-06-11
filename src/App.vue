@@ -55,9 +55,33 @@
 
       <template v-if="tickers.length > 0">
         <hr class="w-full border-t border-gray-600 my-4" />
+        <div>
+          <div>
+            <button
+              v-if="page > 1"
+              @click="prevPage"
+              class="my-4 mx-2 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+              Назад
+            </button>
+            <button
+              v-if="hasNextPage"
+              @click="nextPage"
+              class="my-4 mx-2 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              type="button">Вперёд
+            </button>
+          </div>
+          <p class="mb-2">
+            Страница: {{ page }}
+          </p>
+          <div>
+            Фильтр: <input v-model="filterInput">
+          </div>
+        </div>
+
+        <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="(ticker, index) in tickers"
+            v-for="(ticker, index) in paginatedTickers"
             @click="selectTicker(ticker)"
             :key="index"
             :class="{ 'border-4': selectedTicker === ticker }"
@@ -87,7 +111,9 @@
                   fill-rule="evenodd"
                   d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
                   clip-rule="evenodd"
-                ></path></svg>Удалить
+                ></path>
+              </svg>
+              Удалить
             </button>
           </div>
         </dl>
@@ -96,7 +122,7 @@
         <!-- Graph -->
         <section v-if="selectedTicker" class="relative">
           <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-            VUE - USD
+            {{ selectedTicker.name }} - USD
           </h3>
           <div class="flex items-end border-gray-600 border-b border-l h-64">
             <div
@@ -137,6 +163,8 @@
 </template>
 
 <script>
+const TICKERS_PER_PAGE = 6;
+
 import { API_KEY } from '../config';
 
 import { stringsAreEqual } from '@/lib/functions';
@@ -153,8 +181,12 @@ export default {
 
       graphBars: [],
 
+      filterInput: '',
+
+      page: 1,
+
       allCoinsNames: []
-    }
+    };
   },
 
   methods: {
@@ -174,6 +206,7 @@ export default {
       localStorage.setItem('tickers', JSON.stringify(this.tickers));
 
       this.newTickerName = '';
+      this.filterInput = '';
 
       this.subscribeForPriceUpdates(newTicker.name);
     },
@@ -224,10 +257,30 @@ export default {
           this.graphBars.push(newGraphBar);
         }
       }, 3000);
+    },
+
+    nextPage() {
+      this.page++;
+    },
+    prevPage() {
+      this.page--;
     }
   },
 
   computed: {
+    paginatedTickers() {
+      // Filter by page count (pagination)
+      return this.tickersFilteredByInput.slice(this.pagination.start, this.pagination.end);
+    },
+    tickersFilteredByInput() {
+      const regexp = new RegExp(this.filterInput, 'i');
+
+      return this.tickers.filter(t => t.name.match(regexp));
+    },
+    hasNextPage() {
+      return this.tickersFilteredByInput.length > this.pagination.end;
+    },
+
     builtGraphBars() {
       if (this.graphBars.length === 0) return [];
 
@@ -265,6 +318,13 @@ export default {
       }
 
       return suggestions;
+    },
+
+    pagination() {
+      return {
+        start: TICKERS_PER_PAGE * (this.page - 1),
+        end: TICKERS_PER_PAGE * this.page
+      }
     }
   },
 
@@ -279,7 +339,7 @@ export default {
     const storageTickers = JSON.parse(localStorage.getItem('tickers'));
     if (storageTickers) {
       this.tickers = storageTickers;
-      
+
       this.tickers.forEach(ticker => this.subscribeForPriceUpdates(ticker.name));
     }
 
@@ -291,5 +351,5 @@ export default {
 
     this.allCoinsNames = allCoinsNames;
   }
-}
+};
 </script>
