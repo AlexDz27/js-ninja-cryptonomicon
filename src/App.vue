@@ -74,7 +74,7 @@
             Страница: {{ page }}
           </p>
           <div>
-            Фильтр: <input v-model="filterInput">
+            Фильтр: <input v-model="filter">
           </div>
         </div>
 
@@ -181,9 +181,9 @@ export default {
 
       graphBars: [],
 
-      filterInput: '',
+      filter: new URLSearchParams(document.location.search.substring(1)).get('filter') || '',
 
-      page: 1,
+      page: new URLSearchParams(document.location.search.substring(1)).get('page') || 1,
 
       allCoinsNames: []
     };
@@ -206,7 +206,7 @@ export default {
       localStorage.setItem('tickers', JSON.stringify(this.tickers));
 
       this.newTickerName = '';
-      this.filterInput = '';
+      this.filter = '';
 
       this.subscribeForPriceUpdates(newTicker.name);
     },
@@ -276,7 +276,7 @@ export default {
       return this.filteredTickers.length > this.pagination.end;
     },
     filteredTickers() {
-      const regexp = new RegExp(this.filterInput, 'i');
+      const regexp = new RegExp(this.filter, 'i');
 
       return this.tickers.filter(t => t.name.match(regexp));
     },
@@ -324,7 +324,7 @@ export default {
       return {
         start: TICKERS_PER_PAGE * (this.page - 1),
         end: TICKERS_PER_PAGE * this.page
-      }
+      };
     }
   },
 
@@ -333,8 +333,19 @@ export default {
       if (this.tickerExistsErr) this.tickerExistsErr = false;
     },
 
-    filterInput() {
+    filter() {
       this.page = 1;
+
+      const url = new URL(window.location);
+
+      url.searchParams.set('filter', this.filter);
+      window.history.pushState(null, '', url.toString());
+    },
+    page() {
+      const url = new URL(window.location);
+
+      url.searchParams.set('page', this.page);
+      window.history.pushState(null, '', url.toString());
     }
   },
 
