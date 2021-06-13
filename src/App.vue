@@ -202,9 +202,6 @@ export default {
       };
 
       this.tickers.push(newTicker);
-      // Save tickers into localStorage
-      localStorage.setItem('tickers', JSON.stringify(this.tickers));
-
       this.newTickerName = '';
       this.filter = '';
 
@@ -218,8 +215,6 @@ export default {
 
     selectTicker(ticker) {
       this.selectedTicker = ticker;
-
-      this.graphBars = [];
     },
     deselectTicker() {
       this.selectedTicker = null;
@@ -325,28 +320,49 @@ export default {
         start: TICKERS_PER_PAGE * (this.page - 1),
         end: TICKERS_PER_PAGE * this.page
       };
+    },
+
+    pageStateOptions() {
+      return {
+        filter: this.filter,
+        page: this.page
+      }
     }
   },
 
   watch: {
+    tickers() {
+      localStorage.setItem('tickers', JSON.stringify(this.tickers));
+    },
+
     newTickerName() {
       if (this.tickerExistsErr) this.tickerExistsErr = false;
     },
 
-    filter() {
-      this.page = 1;
+    paginatedTickers() {
+      // Go back to previous page if we delete all tickers
+      if (this.paginatedTickers.length === 0 && this.page > 1) {
+        this.page--;
+      }
+    },
+
+    pageStateOptions(updatedOptions) {
+      const {filter, page} = updatedOptions;
 
       const url = new URL(window.location);
+      url.searchParams.set('filter', filter);
+      url.searchParams.set('page', page);
 
-      url.searchParams.set('filter', this.filter);
       window.history.pushState(null, '', url.toString());
     },
-    page() {
-      const url = new URL(window.location);
 
-      url.searchParams.set('page', this.page);
-      window.history.pushState(null, '', url.toString());
-    }
+    filter() {
+      this.page = 1;
+    },
+
+    selectedTicker() {
+      this.graphBars = [];
+    },
   },
 
   async created() {
