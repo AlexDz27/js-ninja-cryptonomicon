@@ -297,15 +297,15 @@ export default {
     },
 
     suggestions() {
+      if (this.newTickerName === '') return [];
+
       const MAX_SUGGESTIONS_COUNT = 4;
       const suggestions = [];
 
       for (const coin of this.allCoinsNames) {
         if (suggestions.length === MAX_SUGGESTIONS_COUNT) break;
 
-        // If new ticker name input is empty, JS matches all values. We disabled that by stating that
-        // if it is empty, then non-value pattern should be applied, i.e. '^$' - it matches nothing.
-        const pattern = this.newTickerName || '^$';
+        const pattern = this.newTickerName;
         const regexp = new RegExp(pattern, 'i');
         if (coin.match(regexp)) {
           suggestions.push(coin);
