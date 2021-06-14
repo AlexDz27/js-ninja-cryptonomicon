@@ -338,7 +338,9 @@ export default {
       deep: true
     },
 
-    newTickerName() {
+    newTickerName(newValue, oldValue) {
+      if (stringsAreEqual(newValue, oldValue)) return;
+
       if (this.tickerExistsErr) this.tickerExistsErr = false;
     },
 
