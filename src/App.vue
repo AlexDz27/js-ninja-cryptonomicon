@@ -165,8 +165,7 @@
 <script>
 const TICKERS_PER_PAGE = 6;
 
-import { API_KEY } from '../config';
-
+import { loadTickerPrice } from '@/api';
 import { stringsAreEqual } from '@/lib/functions';
 
 export default {
@@ -230,17 +229,8 @@ export default {
 
     subscribeForPriceUpdates(tickerName) {
       setInterval(async () => {
-        const response = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=${API_KEY}`
-        );
-        /**
-         * @type {Object}
-         * @property {number} USD Price of a coin in USD
-         */
-        const data = await response.json();
-
         const currentTicker = this.tickers.find(ticker => ticker.name === tickerName);
-        currentTicker.price = data.USD;
+        currentTicker.price = await loadTickerPrice(tickerName);
 
         // TODO: probably there's a better way to do that further
         if (this.selectedTicker?.name === currentTicker.name) {
