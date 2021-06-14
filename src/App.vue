@@ -331,8 +331,11 @@ export default {
   },
 
   watch: {
-    tickers() {
-      localStorage.setItem('tickers', JSON.stringify(this.tickers));
+    tickers: {
+      handler() {
+        localStorage.setItem('tickers', JSON.stringify(this.tickers));
+      },
+      deep: true
     },
 
     newTickerName() {
